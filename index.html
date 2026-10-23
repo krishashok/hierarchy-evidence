@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hierarchy of Evidence</title>
+<meta name="description" content="An interactive pyramid that explains the hierarchy of scientific evidence, climbed one tier at a time with shilajit as the worked example.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e13; --bg2:#0f161e; --fg:#f3f5f8; --muted:#9aa4b0; --faint:#5b6673;
+  --card:#121a24; --line:rgba(255,255,255,.08); --accent:#f0b53b; --danger:#ff7f70; --ok:#5fd38a;
+  --active-text:#0b0f14;
+  --shadow:0 24px 70px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#f6f2ea; --bg2:#eee7d9; --fg:#15181c; --muted:#5d6670; --faint:#9aa3ad;
+  --card:#ffffff; --line:rgba(0,0,0,.08); --accent:#b8800a; --danger:#c8402f; --ok:#1f8f4e;
+  --active-text:#15181c;
+  --shadow:0 24px 60px rgba(70,50,10,.14);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:radial-gradient(120% 90% at 50% 0%, var(--bg2) 0%, var(--bg) 60%);
+  color:var(--fg);
+  font-family:'Outfit',system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+body.nocursor, body.nocursor *{cursor:none !important}
+
+.app{
+  height:100dvh; display:grid; grid-template-rows:auto minmax(0,1fr) auto;
+  padding:clamp(14px,3vmin,44px); gap:clamp(10px,1.6vmin,22px);
+}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.brand{font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:clamp(11px,1.5vmin,15px);color:var(--muted)}
+.brand b{color:var(--fg)}
+.sub{font-size:clamp(11px,1.5vmin,15px);color:var(--faint)}
+
+.stage{display:grid;grid-template-rows:minmax(0,1.15fr) auto;gap:clamp(10px,2vmin,28px);min-height:0}
+@media (orientation:landscape){
+  .stage{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);align-items:center;gap:clamp(20px,4vmin,64px)}
+}
+body.nocard .stage{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr)}
+body.nocard .card{display:none}
+
+/* ---------- pyramid ---------- */
+.pyr{position:relative;min-height:0;display:flex;align-items:center;justify-content:center}
+.pyr svg{width:100%;height:100%;display:block;overflow:visible}
+.tier{cursor:pointer;transition:transform .32s cubic-bezier(.2,.8,.2,1),filter .32s}
+.tier polygon{transition:fill .32s, stroke .32s}
+.tier text{
+  font-family:inherit;font-weight:600;font-size:13.5px;letter-spacing:.01em;
+  text-anchor:middle;dominant-baseline:middle;pointer-events:none;
+  transition:fill .32s,opacity .32s;
+}
+.tier.todo polygon{fill:color-mix(in oklab,var(--c) 16%, var(--bg));stroke:color-mix(in oklab,var(--c) 30%, transparent);stroke-width:1}
+.tier.todo text{fill:var(--muted);opacity:.75}
+.tier.done polygon{fill:color-mix(in oklab,var(--c) 62%, var(--bg));stroke:transparent}
+.tier.done text{fill:#fff;opacity:.95}
+.tier.active{transform:scale(1.035);transform-box:fill-box;transform-origin:center;filter:drop-shadow(0 0 16px var(--c)) drop-shadow(0 6px 18px rgba(0,0,0,.35))}
+.tier.active polygon{fill:var(--c);stroke:#fff;stroke-width:1.5}
+.tier.active text{fill:var(--active-text);font-weight:800;opacity:1}
+.tier.all polygon{fill:var(--c)}
+.tier.all text{fill:var(--active-text);opacity:1}
+.tier:hover:not(.active) polygon{stroke:color-mix(in oklab,var(--c) 70%, transparent);stroke-width:1.5}
+.axis line,.axis path{stroke:var(--faint);stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.axis text{font-family:inherit;font-size:10.5px;font-weight:700;letter-spacing:.18em;fill:var(--faint);text-anchor:middle}
+.axis .hot{fill:var(--accent)}
+.apex{opacity:0;transition:opacity .4s}
+.apex.on{opacity:1}
+.apex text{font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.2em;fill:var(--accent);text-anchor:middle}
+
+/* ---------- card ---------- */
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:clamp(16px,2.4vmin,28px);
+  padding:clamp(18px,3vmin,40px);box-shadow:var(--shadow);min-height:0;position:relative;
+}
+.card .inner{transition:opacity .18s ease,transform .18s ease}
+.card.swap .inner{opacity:0;transform:translateY(10px)}
+.eyebrow{display:flex;align-items:center;gap:10px;font-size:clamp(11px,1.6vmin,15px);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.eyebrow .dot{width:.8em;height:.8em;border-radius:50%;background:var(--c,var(--accent));box-shadow:0 0 10px var(--c,var(--accent))}
+h1{margin:.35em 0 .3em;font-size:clamp(26px,5.2vmin,58px);line-height:1.02;font-weight:800;letter-spacing:-.02em}
+.def{margin:0;font-size:clamp(15px,2.5vmin,26px);line-height:1.35;color:var(--fg);font-weight:500}
+.blocks{display:grid;gap:clamp(10px,1.6vmin,18px);margin-top:clamp(14px,2.4vmin,28px)}
+.blk{border-left:3px solid var(--c,var(--accent));padding:.1em 0 .1em clamp(12px,1.8vmin,20px)}
+.blk .lbl{font-size:clamp(10px,1.4vmin,13px);font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:.35em}
+.blk p{margin:0;font-size:clamp(14px,2.2vmin,22px);line-height:1.4;color:var(--fg)}
+.blk.catch{border-left-color:var(--danger)}
+.blk.catch .lbl{color:var(--danger)}
+.blk p em{font-style:normal;color:var(--accent);font-weight:600}
+.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:clamp(10px,2vmin,20px);margin-top:clamp(14px,2.4vmin,28px)}
+.verdict .lbl{font-size:clamp(11px,1.6vmin,15px);font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.meter{display:flex;gap:6px}
+.meter span{padding:.35em .9em;border-radius:999px;border:1px solid var(--line);font-weight:700;font-size:clamp(12px,1.8vmin,17px);color:var(--faint);letter-spacing:.04em}
+.meter span.lit{background:var(--danger);border-color:var(--danger);color:#fff;box-shadow:0 0 18px color-mix(in oklab,var(--danger) 60%,transparent)}
+.nav{display:flex;gap:8px;margin-top:clamp(14px,2.4vmin,28px)}
+.nav button,.cta{
+  font:inherit;font-weight:700;font-size:clamp(13px,1.9vmin,17px);
+  background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:999px;
+  padding:.55em 1.1em;cursor:pointer;transition:background .15s,border-color .15s;
+}
+.nav button:hover,.cta:hover{background:color-mix(in oklab,var(--fg) 8%,transparent)}
+.nav button:disabled{opacity:.35;cursor:default}
+.cta{background:var(--accent);color:var(--active-text);border-color:var(--accent);margin-top:clamp(14px,2.4vmin,28px)}
+.cta:hover{background:color-mix(in oklab,var(--accent) 88%,#fff)}
+
+footer{display:flex;justify-content:space-between;gap:16px;color:var(--faint);font-size:clamp(11px,1.5vmin,14px)}
+footer kbd{font:inherit;border:1px solid var(--line);border-radius:6px;padding:0 .4em;color:var(--muted)}
+body.clean header,body.clean footer,body.clean .nav{display:none}
+
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">Hierarchy of <b>Evidence</b></div>
+    <div class="sub">Worked example: shilajit</div>
+  </header>
+
+  <main class="stage">
+    <div class="pyr" id="pyr" aria-label="Pyramid of evidence levels"></div>
+    <section class="card" id="card" aria-live="polite">
+      <div class="inner" id="inner"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div><kbd>↑</kbd> <kbd>↓</kbd> climb · tap any tier · <kbd>Home</kbd> start · <kbd>End</kbd> verdict</div>
+    <div>Add <kbd>?clean=1</kbd> <kbd>&amp;cursor=0</kbd> for recording · <kbd>?theme=light</kbd></div>
+  </footer>
+</div>
+
+<script>
+/* ---------- content (bottom → top) ---------- */
+const TIERS = [
+  { short:'Mechanistic studies', name:'Mechanistic studies', c:'#5e6878',
+    def:'Scientists ask how something might work. Does it change a chemical reaction, or what a cell does in a dish?',
+    ex:'Shilajit extracts have killed cancer cells in laboratory experiments.',
+    catch:'Treating cancer safely inside a human is more than pouring something onto cells in a petri dish. <em>Even bleach kills cancer cells.</em>' },
+  { short:'Animal studies', name:'Animal studies', c:'#5a7a9c',
+    def:'Test it in a living animal and watch what changes.',
+    ex:'Researchers made rats swim repeatedly and measured changes in their behaviour and cellular energy machinery.',
+    catch:'Useful research. But <em>we are not rats.</em> It gives us something to investigate in humans, not an answer.' },
+  { short:'Expert opinion', name:'Expert opinion', c:'#4a8bb1',
+    def:'Someone with credentials says so.',
+    ex:'Charaka wrote that no curable disease exists that shilajit can’t treat. Product pages still quote him.',
+    catch:'Experts remember the patient who improved and <em>forget the ten who didn’t.</em>' },
+  { short:'Case reports', name:'Case reports', c:'#389cbb',
+    def:'A doctor documents individual experiences.',
+    ex:'“I took shilajit, I feel energetic.”',
+    catch:'People take a tonic, eat healthier and sleep earlier, but <em>only credit the tonic.</em>' },
+  { short:'Cross-sectional', name:'Cross-sectional studies', c:'#2aa9b5',
+    def:'Survey a lot of people once and look for patterns.',
+    ex:'Do shilajit users report more energy than non-users? A snapshot can tell you that.',
+    catch:'A snapshot can’t tell you <em>which came first,</em> the tonic or the health.' },
+  { short:'Cohort studies', name:'Cohort studies', c:'#2bb59a',
+    def:'Follow groups of people for years and see what happens to them.',
+    ex:'Cohorts are how long-term harms get detected. For shilajit, long-term human evidence remains limited.',
+    catch:'People who choose a tonic <em>differ from people who don’t,</em> in ways you can’t fully measure.' },
+  { short:'Non-randomised trials', name:'Intervention without randomisation', c:'#55bf72',
+    def:'Give people something. Measure before and after.',
+    ex:'2010: 35 infertile men enrolled, 28 completed. Average total sperm count rose 61%. No placebo group.',
+    catch:'Select men after an unusually bad test and some improve anyway: <em>regression to the mean.</em> Your fever breaks on its own, but Kumar Sanu gets the credit.' },
+  { short:'Randomised controlled trials', name:'Randomised controlled trials', c:'#a2c447',
+    def:'Chance decides who gets the treatment. Blinding keeps participants and researchers from knowing who got what.',
+    ex:'2016: 96 men aged 45–55 enrolled, 75 completed. Testosterone rose 20% over baseline in the shilajit group, significantly more than placebo.',
+    catch:'<em>The manufacturer funded it.</em> A higher blood number isn’t automatically better health. They tested a purified extract; your Amazon purchase might not match it.' },
+  { short:'Systematic reviews', name:'Systematic reviews', c:'#f0b53b',
+    def:'Gather every relevant study, assess each one’s quality, and check whether they agree.',
+    ex:'For shilajit there are few independent studies to combine. Safety research has also found heavy metals in some products.',
+    catch:'<em>Combining weak studies doesn’t create strong evidence.</em> A review is only as good as what goes into it.' },
+];
+const N = TIERS.length;           // 9
+const INTRO = -1, VERDICT = N;    // internal level range
+
+/* ---------- options from URL ---------- */
+const params = new URLSearchParams(location.search);
+if (params.get('theme') === 'light') document.documentElement.dataset.theme = 'light';
+if (params.get('clean') === '1') document.body.classList.add('clean');
+if (params.get('cursor') === '0') document.body.classList.add('nocursor');
+if (params.get('card') === '0') document.body.classList.add('nocard');
+let level = INTRO;
+if (params.has('level')) {
+  const l = parseInt(params.get('level'), 10);       // public: 0 intro, 1..9 tiers, 10 verdict
+  if (!isNaN(l)) level = Math.max(INTRO, Math.min(VERDICT, l - 1));
+}
+
+/* ---------- build pyramid SVG ---------- */
+const W = 480, H = 470, cx = 272, topY = 10, botY = 456, gap = 4;
+const h = (botY - topY - gap * (N - 1)) / N;
+const wTop = 150, wBot = 400;
+const widthAt = y => wTop + (wBot - wTop) * (y - topY) / (botY - topY);
+const svgNS = 'http://www.w3.org/2000/svg';
+const svg = document.createElementNS(svgNS, 'svg');
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+svg.setAttribute('role', 'img');
+
+/* axis */
+const axis = document.createElementNS(svgNS, 'g'); axis.setAttribute('class', 'axis');
+axis.innerHTML = `
+  <line x1="30" y1="${botY - 40}" x2="30" y2="${topY + 40}"/>
+  <path d="M24 ${topY + 48} L30 ${topY + 40} L36 ${topY + 48}"/>
+  <text transform="translate(30 ${topY + 24})" class="hot">STRONGER</text>
+  <text transform="translate(30 ${botY - 20})">WEAKER</text>`;
+svg.appendChild(axis);
+
+const apex = document.createElementNS(svgNS, 'g'); apex.setAttribute('class', 'apex'); apex.id = 'apex';
+apex.innerHTML = `<text x="${cx}" y="${topY - 2}">VERDICT</text>`;
+svg.appendChild(apex);
+
+const tierEls = [];
+TIERS.forEach((t, i) => {
+  const y1 = botY - i * (h + gap), y0 = y1 - h;
+  const a = widthAt(y0) / 2, b = widthAt(y1) / 2;
+  const g = document.createElementNS(svgNS, 'g');
+  g.setAttribute('class', 'tier todo');
+  g.style.setProperty('--c', t.c);
+  g.dataset.i = i;
+  g.setAttribute('tabindex', '0');
+  g.setAttribute('role', 'button');
+  g.setAttribute('aria-label', `${i + 1}. ${t.name}`);
+  g.innerHTML = `<polygon points="${cx - a},${y0} ${cx + a},${y0} ${cx + b},${y1} ${cx - b},${y1}" rx="3"/>
+                 <text x="${cx}" y="${(y0 + y1) / 2 + 1}">${t.short}</text>`;
+  g.addEventListener('click', () => setLevel(i));
+  g.addEventListener('keydown', e => { if (e.key === 'Enter') setLevel(i); });
+  svg.appendChild(g);
+  tierEls.push(g);
+});
+document.getElementById('pyr').appendChild(svg);
+
+/* ---------- card rendering ---------- */
+const card = document.getElementById('card');
+const inner = document.getElementById('inner');
+
+function cardHTML() {
+  if (level === INTRO) return `
+    <div class="eyebrow"><span class="dot"></span>Hierarchy of evidence</div>
+    <h1>Does shilajit work?</h1>
+    <p class="def">Humans are excellent at fooling themselves. Science’s job is to find the direction of truth anyway. That’s why evidence comes in a hierarchy.</p>
+    <div class="blocks"><div class="blk"><div class="lbl">The plan</div><p>Climb the pyramid one tier at a time, with shilajit as the test case.</p></div></div>
+    <button class="cta" onclick="setLevel(0)">Start climbing ↑</button>`;
+  if (level === VERDICT) return `
+    <div class="eyebrow"><span class="dot"></span>The verdict</div>
+    <h1>So, does shilajit work?</h1>
+    <p class="def">Some promising early results. But small human studies, limited independent confirmation, and unanswered questions about long-term safety.</p>
+    <div class="verdict">
+      <div class="lbl">Overall confidence</div>
+      <div class="meter"><span class="lit">Low</span><span>Moderate</span><span>High</span></div>
+    </div>
+    ${navHTML()}`;
+  const t = TIERS[level];
+  return `
+    <div class="eyebrow" style="--c:${t.c}"><span class="dot"></span>Level ${level + 1} of ${N}</div>
+    <h1>${t.name}</h1>
+    <p class="def">${t.def}</p>
+    <div class="blocks" style="--c:${t.c}">
+      <div class="blk"><div class="lbl">Shilajit</div><p>${t.ex}</p></div>
+      <div class="blk catch"><div class="lbl">The catch</div><p>${t.catch}</p></div>
+    </div>
+    ${navHTML()}`;
+}
+function navHTML() {
+  return `<div class="nav">
+    <button onclick="step(-1)" ${level <= INTRO ? 'disabled' : ''}>↓ Down</button>
+    <button onclick="step(1)" ${level >= VERDICT ? 'disabled' : ''}>${level === N - 1 ? 'Verdict →' : 'Up ↑'}</button>
+  </div>`;
+}
+
+function paintPyramid() {
+  tierEls.forEach((g, i) => {
+    g.classList.remove('todo', 'done', 'active', 'all');
+    if (level === VERDICT) g.classList.add('all');
+    else if (i < level) g.classList.add('done');
+    else if (i === level) g.classList.add('active');
+    else g.classList.add('todo');
+  });
+  document.getElementById('apex').classList.toggle('on', level === VERDICT);
+}
+
+let swapTimer = null;
+function render(animate = true) {
+  paintPyramid();
+  try {
+    const p = new URLSearchParams(location.search);
+    p.set('level', level + 1);
+    history.replaceState(null, '', '?' + p.toString());
+  } catch (_) { /* file:// or data: origins can't rewrite the URL */ }
+  if (!animate) { inner.innerHTML = cardHTML(); return; }
+  card.classList.add('swap');
+  clearTimeout(swapTimer);
+  swapTimer = setTimeout(() => { inner.innerHTML = cardHTML(); card.classList.remove('swap'); }, 160);
+}
+function setLevel(l) { level = Math.max(INTRO, Math.min(VERDICT, l)); render(); }
+function step(d) { setLevel(level + d); }
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'BUTTON' && (e.key === ' ' || e.key === 'Enter')) return;
+  switch (e.key) {
+    case 'ArrowUp': case 'ArrowRight': case ' ': case 'Enter': case 'PageDown': e.preventDefault(); step(1); break;
+    case 'ArrowDown': case 'ArrowLeft': case 'Backspace': case 'PageUp': e.preventDefault(); step(-1); break;
+    case 'Home': e.preventDefault(); setLevel(INTRO); break;
+    case 'End': e.preventDefault(); setLevel(VERDICT); break;
+    case 'l': document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? '' : 'light'; break;
+    case 'c': document.body.classList.toggle('clean'); break;
+    case 'h': document.body.classList.toggle('nocursor'); break;
+    default:
+      if (/^[0-9]$/.test(e.key)) { const n = parseInt(e.key, 10); setLevel(n === 0 ? VERDICT : n - 1); }
+  }
+});
+render(false);
+</script>
+</body>
+</html>
